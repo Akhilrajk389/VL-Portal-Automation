@@ -753,8 +753,7 @@ public class TestCases {
 
         wait.until(ExpectedConditions.urlToBe("https://mitra-leader.vahan.co/bulk-actions"));
         System.out.println("✅ User is redirected to Bulk Referrals Page");
-        
-        
+        System.out.println("✅ Staging Branch");
     }
 
 
