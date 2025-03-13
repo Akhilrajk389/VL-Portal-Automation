@@ -32,97 +32,17 @@ import java.util.Random;
 import java.util.Set;
 import java.util.logging.Level;
 import java.io.FileInputStream;
+import demo.wrappers.Wrappers;
+import demo.BaseTest;
+import demo.TestUtils;
+import io.github.bonigarcia.wdm.WebDriverManager;
 
-public class TestCases {
-    ChromeDriver driver;
-    // WebDriverWait wait;
-    /*
-     * TODO: Write your tests here with testng @Test annotation.
-     * Follow testCase01 testCase02... format or what is provided in
-     * instructions
-     */
+public class HomePageTests extends BaseTest {
     SoftAssert softAssert = new SoftAssert();
 
-    /*
-     * Do not change the provided methods unless necessary, they will help in
-     * automation and assessment
-     */
     @BeforeTest
     public void startBrowser() {
-        System.setProperty("java.util.logging.config.file", "logging.properties");
-
-        // NOT NEEDED FOR SELENIUM MANAGER
-        // WebDriverManager.chromedriver().timeout(30).setup();
-
-        ChromeOptions options = new ChromeOptions();
-        LoggingPreferences logs = new LoggingPreferences();
-
-        logs.enable(LogType.BROWSER, Level.ALL);
-        logs.enable(LogType.DRIVER, Level.ALL);
-        options.setCapability("goog:loggingPrefs", logs);
-        options.addArguments("--remote-allow-origins=*");
-
-        System.setProperty(ChromeDriverService.CHROME_DRIVER_LOG_PROPERTY, "build/chromedriver.log");
-
-        driver = new ChromeDriver(options);
-
-        driver.manage().window().maximize();
-        driver.get("https://mitra-leader.vahan.co");
-
-        // SoftAssert softAssert = new SoftAssert();
-    }
-
-    public String generateRandomPhoneNumber() {
-        Random random = new Random();
-        int firstDigit = 6 + random.nextInt(4); // Generates 6, 7, 8, or 9
-        long remainingDigits = 100000000L + random.nextInt(900000000); // 9 more digits
-        return firstDigit + String.valueOf(remainingDigits);
-    }
-
-    public class RandomTextGenerator {
-        public static String generateRandomText(int length) {
-            String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-            StringBuilder text = new StringBuilder();
-            Random random = new Random();
-
-            for (int i = 0; i < length; i++) {
-                text.append(chars.charAt(random.nextInt(chars.length())));
-            }
-            return text.toString();
-        }
-    }
-
-    public class ExcelGenerator {
-        public static String generateExcelFile() throws IOException {
-            String filePath = System.getProperty("user.dir") + "/candidate_data.xlsx"; // Save in project root
-            Workbook workbook = new XSSFWorkbook();
-            Sheet sheet = workbook.createSheet("Candidates");
-
-            Row headerRow = sheet.createRow(0); // First row
-            headerRow.createCell(0).setCellValue("candidateName"); // Header for Name
-            headerRow.createCell(1).setCellValue("candidatePhoneNumber");
-
-            // Create header row
-            String[] names = { "Ram", "Pushpendra", "Mahaveer", "Anil", "Kapil", "Lakshpat", "Himmat", "Pavan",
-                    "Shahrukh", "Niranjan" };
-            Random rand = new Random();
-
-            for (int i = 1; i <= 30; i++) {
-                Row row = sheet.createRow(i);
-                row.createCell(0).setCellValue(names[rand.nextInt(names.length)]); // Random Name
-                row.createCell(1).setCellValue("9" + (rand.nextInt(900000000) + 100000000)); // Random Phone
-            }
-
-            // 🔹 Write to File
-            FileOutputStream fileOut = new FileOutputStream(filePath);
-            workbook.write(fileOut);
-            fileOut.close();
-            workbook.close();
-
-            System.out.println("✅ Excel File Created: " + filePath);
-            return filePath; // Return file path to use in Selenium upload
-        }
-
+        super.startBrowser();
     }
 
     @Test(enabled = true, priority = 1)
@@ -190,8 +110,8 @@ public class TestCases {
         Thread.sleep(500);
         System.out.println("Current url is: " + driver.getCurrentUrl());
 
+        wait.until(ExpectedConditions.urlContains("/home"));
         Assert.assertTrue(driver.getCurrentUrl().contains("/home"), "User has not redirected to the Home page");
-
     }
 
     @Test(enabled = true, priority = 2)
@@ -205,10 +125,12 @@ public class TestCases {
 
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true, priority = 3)
     public void TC03_Verify_Home_UI() {
         System.out.println("Verifying UI Elements on Home Page...");
 
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//span[text() = 'Add Single Lead']")));
         // Check if all the main links in the Homepage is Displayed
 
         // softAssert.assertTrue(driver.findElement(By.xpath("//span[text() = 'Leads to
@@ -232,7 +154,7 @@ public class TestCases {
         softAssert.assertAll();
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true, priority = 4)
     public void TC04_Navigation_Tests() throws InterruptedException {
 
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -285,13 +207,13 @@ public class TestCases {
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//span[text() = 'Add Lead']")));
 
         WebElement name = driver.findElement(By.id("leadName"));
-        name.sendKeys("Test User" + RandomTextGenerator.generateRandomText(5));
+        name.sendKeys("Test User" + TestUtils.RandomTextGenerator.generateRandomText(5));
 
         String enteredName = name.getAttribute("value");
         System.out.println("Entered Name: " + enteredName);
 
         WebElement mobile = driver.findElement(By.id("leadPhoneNumber"));
-        mobile.sendKeys(generateRandomPhoneNumber());
+        mobile.sendKeys(TestUtils.generateRandomPhoneNumber());
 
         String enteredNumber = mobile.getAttribute("value");
         System.out.println("Entered Number: " + enteredNumber);
@@ -502,9 +424,9 @@ public class TestCases {
         return rowCount;
     }
 
-    @Test(enabled = true, priority = 3)
+    @Test(enabled = false, priority = 3)
     public void BulkUploadCandidates() throws IOException, InterruptedException {
-        String filePath = ExcelGenerator.generateExcelFile();
+        String filePath = TestUtils.generateExcelFile();
         int expectedCandidateCount = getExcelRowCount(filePath);
         System.out.println("Number of candidates in Excel file: " + expectedCandidateCount);
         
@@ -753,10 +675,11 @@ public class TestCases {
 
         wait.until(ExpectedConditions.urlToBe("https://mitra-leader.vahan.co/bulk-actions"));
         System.out.println("✅ User is redirected to Bulk Referrals Page");
-        
-        
-    }
+        System.out.println("✅ Staging Branch");
 
+        wrappers.clickElement(By.xpath("//span[text() = 'Download All']"));
+
+    }
 
     @AfterTest
     public void endTest() {
