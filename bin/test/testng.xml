@@ -3,7 +3,9 @@
 <suite name="Test Suite for Buildout">
     <test name = "Test Cases for Buildout">
        <classes>          
-            <class name="demo.TestCases"></class>
+            <class name="demo.HomePageTests"></class>
+            <class name="demo.JobsPage"></class>
+            <class name="demo.AddSingleCandidates"></class>
         </classes>
     </test>
 </suite>
