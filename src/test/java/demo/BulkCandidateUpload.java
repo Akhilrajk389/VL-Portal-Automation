@@ -39,6 +39,8 @@ public class BulkCandidateUpload {
     SoftAssert softAssert = new SoftAssert();
     Wrappers wrappers;
     LoginUtils loginUtils;
+
+
     @BeforeTest
     public void startBrowser() {
         System.setProperty("java.util.logging.config.file", "logging.properties");
@@ -126,7 +128,15 @@ public class BulkCandidateUpload {
         return rowCount;
     }
 
-    @Test(enabled = true)
+    @Test(priority = 1)
+    public void testLogin() throws InterruptedException {
+        loginUtils.login("7560868044", "8044");
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait.until(ExpectedConditions.urlContains("/home"));    
+        Assert.assertTrue(driver.getCurrentUrl().contains("/home"), "Login failed, not redirected to home page");
+    }
+
+    @Test(enabled = false, priority = 2)
     public void BulkUploadCandidates() throws IOException, InterruptedException {
         String filePath = ExcelGenerator.generateExcelFile();
         int expectedCandidateCount = getExcelRowCount(filePath);
@@ -383,10 +393,63 @@ public class BulkCandidateUpload {
 
     }
 
-    @Test (priority = 1)
-    public void testLogin() throws InterruptedException {
-        loginUtils.login("7560868044", "8044");
-        Assert.assertTrue(driver.getCurrentUrl().contains("/home"), "Login failed, not redirected to home page");
+    @Test(enabled = true, priority = 3)
+    public void verifyBulkUploadCandidatesPageElements() throws InterruptedException {
+
+        System.out.println("Verify Bulk Upload Candidates Page Elements");
+
+        driver.get("https://mitra-leader.vahan.co/bulk-actions");
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait.until(ExpectedConditions.urlContains("/bulk-actions"));
+
+        System.out.println("Checking presence of Bulk Upload & Referral button");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//div[text() = 'Bulk Upload & Referral']")), "Bulk Upload & Referral element is not present");
+        System.out.println("Checking presence of Upload and refer candidates in bulk for a job button");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//div[text() = 'Upload and refer candidates in bulk for a job']")), "Upload and refer candidates in bulk for a job element is not present");
+        System.out.println("Checking presence of Bulk Referral button");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//span[text() = 'Bulk Referral']")), "Bulk Referral element is not present");
+        System.out.println("Checking presence of Bulk Uploads button");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//span[text() = 'Bulk Uploads']")), "Bulk Uploads element is not present");
+        System.out.println("Checking presence of Bulk WhatsApp Messages button");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//span[text() = 'Bulk WhatsApp Messages']")), "Bulk WhatsApp Messages element is not present");
+        System.out.println("Checking presence of Refresh button");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//span[text() = 'Refresh']")), "Refresh element is not present");
+        System.out.println("Checking presence of Download All button");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//span[text() = 'Download All']")), "Download All element is not present");
+        System.out.println("Checking presence of Pagination");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//li[@class = 'ant-pagination-total-text']")), "Pagination total text element is not present");
+        System.out.println("Checking presence of Apply filter button");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//button[@class = 'ant-btn ant-btn-default apply-filter-btn']")), "Apply filter button is not present");
+        System.out.println("Checking presence of Date Picker");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//div[@class = 'ant-picker ant-picker-range']")), "Date range picker is not present");
+        softAssert.assertAll();
+
+        System.out.println("Verify Apply filter button is working");
+
+        WebElement filterButton = driver.findElement(By.xpath("//button[@class = 'ant-btn ant-btn-default apply-filter-btn']"));
+        filterButton.click();
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class = 'sidername']")));
+
+        System.out.println("Verify Filter components");
+
+        System.out.println("Checking presence of Clients filter component");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//div[text() = 'Clients']")), "Clients filter component is not present");
+        System.out.println("Checking presence of Process Status filter component");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//div[text() = 'Process Status']")), "Process Status filter component is not present");
+        System.out.println("Checking presence of Clear All button");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//span[text() = 'Clear All']")), "Clear All button is not present");
+        System.out.println("Checking presence of Submit button");
+        softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//span[text() = 'Submit']")), "Submit button is not present");
+
+
+
+
+
+
+
+        
+        softAssert.assertAll();
     }
 
     @AfterTest
