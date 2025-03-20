@@ -128,6 +128,39 @@ public class BulkCandidateUpload {
         return rowCount;
     }
 
+    public static boolean waitForFileDownload(String downloadDirectory, String expectedFileName, int timeoutSeconds) {
+        File downloadFolder = new File(downloadDirectory);
+        File[] filesList;
+        boolean isFileDownloaded = false;
+
+        // Wait for the file to be downloaded within the timeout period
+        for (int i = 0; i < timeoutSeconds; i++) {
+            filesList = downloadFolder.listFiles();
+
+            // Check if the expected file is in the download directory
+            for (File file : filesList) {
+                if (file.getName().equals(expectedFileName)) {
+                    System.out.println("✅ File downloaded successfully: " + file.getName());
+                    isFileDownloaded = true;
+                    break;
+                }
+            }
+
+            if (isFileDownloaded) {
+                break;
+            }
+
+            // Wait for 1 second before checking again
+            try {
+                Thread.sleep(1000);  // 1-second delay between checks
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return isFileDownloaded;
+    }
+
     @Test(priority = 1)
     public void testLogin() throws InterruptedException {
         loginUtils.login("7560868044", "8044");
@@ -136,7 +169,7 @@ public class BulkCandidateUpload {
         Assert.assertTrue(driver.getCurrentUrl().contains("/home"), "Login failed, not redirected to home page");
     }
 
-    @Test(enabled = false, priority = 2)
+    @Test(enabled = true, priority = 3)
     public void BulkUploadCandidates() throws IOException, InterruptedException {
         String filePath = ExcelGenerator.generateExcelFile();
         int expectedCandidateCount = getExcelRowCount(filePath);
@@ -387,13 +420,69 @@ public class BulkCandidateUpload {
 
         wait.until(ExpectedConditions.urlToBe("https://mitra-leader.vahan.co/bulk-actions"));
         System.out.println("✅ User is redirected to Bulk Referrals Page");
-        System.out.println("✅ Staging Branch");
+        // System.out.println("✅ Staging Branch");
 
-        wrappers.clickElement(By.xpath("//span[text() = 'Download All']"));
+        // wrappers.clickElement(By.xpath("//span[text() = 'Download All']"));
+        WebElement fileUploadStatusProcessing = driver.findElement(By.xpath("//div[text() = 'Processing for referral']"));
+        String fileUploadStatusText = fileUploadStatusProcessing.getText();
+        // System.out.println("File Upload Status: " + fileUploadStatusText);
+
+        if (fileUploadStatusText.equals("Processing for referral")) {
+            System.out.println("File Upload Status: " + fileUploadStatusText);
+            WebElement downloadCandidateStatusButton = driver.findElement(By.xpath("//button[@class = 'ant-btn ant-btn-default ba-download-candidate-status-btn d-flex align-items-center ba-cp secondary-btn-styles']"));
+            softAssert.assertFalse(downloadCandidateStatusButton.isEnabled(), "Download Candidate Status Button not disabled");
+            System.out.println("✅ Download Candidate Status Button is disabled");
+
+            try {
+
+                String downloadDirectory = "/Users/akhilraj/Downloads";  
+                String expectedFileName = "Candidate_Status_Report.csv";
+                // Locate all buttons with the desired class
+                List<WebElement> downloadButtons = driver.findElements(By.xpath("//button[contains(@class, 'ba-download-candidate-status-btn')]"));
+            
+                // Check if 'Referral complete' status is displayed
+                WebElement fileUploadStatusReferralComplete = driver.findElement(By.xpath("//div[text() = 'Referral complete']"));
+                if (fileUploadStatusReferralComplete.isDisplayed()) {
+            
+                    boolean buttonClicked = false;  // Track if any button is clicked
+            
+                    // Loop through all matching buttons and click the first enabled one
+                    for (WebElement button : downloadButtons) {
+                        if (button.isEnabled()) {  // Check if the button is enabled
+                            button.click();  // Click on the enabled button
+                            System.out.println("✅ Download Candidate Status Button clicked successfully!");
+                            buttonClicked = true;
+                            break;  // Stop after clicking the first enabled button
+                        } else {
+                            System.out.println("⏩ Button is disabled, skipping...");
+                        }
+                    }
+            
+                    // Assert if no enabled button was found
+                    softAssert.assertTrue(buttonClicked, "❌ No enabled Download Candidate Status button found!");
+               
+                    // ✅ Verify if the file is downloaded
+                boolean isFileDownloaded = waitForFileDownload(downloadDirectory, expectedFileName, 30);
+                softAssert.assertTrue(isFileDownloaded, "❌ File was not downloaded!");
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            
+
+            
+        } 
+
+
+
+    
+
+
 
     }
 
-    @Test(enabled = true, priority = 3)
+    @Test(enabled = true, priority = 2)
     public void verifyBulkUploadCandidatesPageElements() throws InterruptedException {
 
         System.out.println("Verify Bulk Upload Candidates Page Elements");
@@ -442,15 +531,11 @@ public class BulkCandidateUpload {
         System.out.println("Checking presence of Submit button");
         softAssert.assertTrue(wrappers.isElementPresent(By.xpath("//span[text() = 'Submit']")), "Submit button is not present");
 
-
-
-
-
-
-
-        
         softAssert.assertAll();
     }
+
+  
+
 
     @AfterTest
     public void endTest() {
